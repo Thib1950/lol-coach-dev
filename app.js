@@ -1,104 +1,33 @@
-const $ = (s, root=document) => root.querySelector(s);
-const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-const state = { champions: [], version: "—", enemy: ["","","","",""] };
-const knownProfiles = {
-  "Nasus": {tags:["Fighter","Tank"],damage:"physical",mobility:"low",cc:"low",healing:"medium",range:"melee"},
-  "Darius": {tags:["Fighter","Tank"],damage:"physical",mobility:"low",cc:"medium",healing:"medium",range:"melee"},
-  "Lee Sin": {tags:["Fighter","Assassin"],damage:"physical",mobility:"high",cc:"low",healing:"low",range:"melee"},
-  "Zed": {tags:["Assassin"],damage:"physical",mobility:"high",cc:"low",healing:"low",range:"melee"},
-  "Yasuo": {tags:["Fighter","Assassin"],damage:"physical",mobility:"high",cc:"medium",healing:"low",range:"melee"},
-  "Yone": {tags:["Fighter","Assassin"],damage:"mixed",mobility:"high",cc:"medium",healing:"low",range:"melee"},
-  "Ahri": {tags:["Mage","Assassin"],damage:"magic",mobility:"high",cc:"medium",healing:"low",range:"ranged"},
-  "Syndra": {tags:["Mage"],damage:"magic",mobility:"low",cc:"medium",healing:"low",range:"ranged"},
-  "Lux": {tags:["Mage","Support"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"ranged"},
-  "Brand": {tags:["Mage","Support"],damage:"magic",mobility:"low",cc:"low",healing:"low",range:"ranged"},
-  "Veigar": {tags:["Mage"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"ranged"},
-  "Annie": {tags:["Mage"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"ranged"},
-  "Morgana": {tags:["Mage","Support"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"ranged"},
-  "Vayne": {tags:["Marksman","Assassin"],damage:"physical",mobility:"medium",cc:"low",healing:"low",range:"ranged"},
-  "Jinx": {tags:["Marksman"],damage:"physical",mobility:"low",cc:"low",healing:"low",range:"ranged"},
-  "Caitlyn": {tags:["Marksman"],damage:"physical",mobility:"medium",cc:"low",healing:"low",range:"ranged"},
-  "Ashe": {tags:["Marksman","Support"],damage:"physical",mobility:"low",cc:"high",healing:"low",range:"ranged"},
-  "Varus": {tags:["Marksman","Mage"],damage:"mixed",mobility:"low",cc:"medium",healing:"low",range:"ranged"},
-  "Miss Fortune": {tags:["Marksman"],damage:"physical",mobility:"low",cc:"low",healing:"low",range:"ranged"},
-  "Leona": {tags:["Tank","Support"],damage:"magic",mobility:"medium",cc:"high",healing:"low",range:"melee"},
-  "Nautilus": {tags:["Tank","Support"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"melee"},
-  "Thresh": {tags:["Support","Tank"],damage:"mixed",mobility:"medium",cc:"high",healing:"low",range:"ranged"},
-  "Blitzcrank": {tags:["Tank","Support"],damage:"magic",mobility:"medium",cc:"high",healing:"low",range:"melee"},
-  "Rell": {tags:["Tank","Support"],damage:"magic",mobility:"medium",cc:"high",healing:"low",range:"melee"},
-  "Maokai": {tags:["Tank","Mage"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"melee"},
-  "Ornn": {tags:["Tank"],damage:"mixed",mobility:"low",cc:"high",healing:"low",range:"melee"},
-  "Malphite": {tags:["Tank","Mage"],damage:"magic",mobility:"medium",cc:"high",healing:"low",range:"melee"},
-  "Garen": {tags:["Fighter","Tank"],damage:"physical",mobility:"low",cc:"low",healing:"medium",range:"melee"},
-  "Sett": {tags:["Fighter","Tank"],damage:"physical",mobility:"low",cc:"medium",healing:"medium",range:"melee"},
-  "Aatrox": {tags:["Fighter"],damage:"physical",mobility:"medium",cc:"medium",healing:"high",range:"melee"},
-  "Warwick": {tags:["Fighter","Tank"],damage:"mixed",mobility:"medium",cc:"medium",healing:"high",range:"melee"},
-  "Vladimir": {tags:["Mage"],damage:"magic",mobility:"low",cc:"low",healing:"high",range:"ranged"},
-  "Soraka": {tags:["Support","Mage"],damage:"magic",mobility:"low",cc:"low",healing:"high",range:"ranged"},
-  "Yuumi": {tags:["Support","Mage"],damage:"magic",mobility:"low",cc:"low",healing:"high",range:"ranged"},
-  "Sylas": {tags:["Mage","Assassin"],damage:"magic",mobility:"medium",cc:"medium",healing:"high",range:"melee"},
-  "Katarina": {tags:["Assassin","Mage"],damage:"magic",mobility:"high",cc:"low",healing:"low",range:"melee"},
-  "Akali": {tags:["Assassin"],damage:"magic",mobility:"high",cc:"low",healing:"low",range:"melee"},
-  "Evelynn": {tags:["Assassin","Mage"],damage:"magic",mobility:"medium",cc:"low",healing:"low",range:"melee"},
-  "Kindred": {tags:["Marksman"],damage:"physical",mobility:"medium",cc:"low",healing:"low",range:"ranged"},
-  "Graves": {tags:["Marksman"],damage:"physical",mobility:"medium",cc:"low",healing:"low",range:"ranged"},
-  "Karthus": {tags:["Mage"],damage:"magic",mobility:"low",cc:"low",healing:"low",range:"ranged"},
-  "Rammus": {tags:["Tank"],damage:"magic",mobility:"medium",cc:"medium",healing:"low",range:"melee"},
-  "Amumu": {tags:["Tank","Mage"],damage:"magic",mobility:"low",cc:"high",healing:"low",range:"melee"},
-  "Hecarim": {tags:["Fighter"],damage:"physical",mobility:"high",cc:"medium",healing:"low",range:"melee"},
-  "Nocturne": {tags:["Fighter","Assassin"],damage:"physical",mobility:"high",cc:"low",healing:"low",range:"melee"},
-  "Jarvan IV": {tags:["Fighter","Tank"],damage:"physical",mobility:"medium",cc:"high",healing:"low",range:"melee"},
-  "Vi": {tags:["Fighter","Assassin"],damage:"physical",mobility:"medium",cc:"high",healing:"low",range:"melee"},
-  "Poppy": {tags:["Tank","Fighter"],damage:"physical",mobility:"low",cc:"high",healing:"low",range:"melee"}
-};
-function navigate(view){$$(".view").forEach(v=>v.classList.toggle("active",v.id===`view-${view}`));$$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view===view));window.scrollTo({top:0,behavior:"smooth"});}
-$$("[data-view]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
-$$("[data-go]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.go)));
-function canonicalName(name){const raw=(name||"").trim().toLowerCase();return state.champions.find(c=>c.name.toLowerCase()===raw)?.name||Object.keys(knownProfiles).find(n=>n.toLowerCase()===raw)||null;}
-async function loadGameData(){
-  const list=$("#champion-list");
-  try{
-    const versions=await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then(r=>{if(!r.ok)throw Error("versions");return r.json()});
-    state.version=versions[0]||"—";$("#patch-label").textContent=state.version;
-    const data=await fetch(`https://ddragon.leagueoflegends.com/cdn/${state.version}/data/fr_FR/champion.json`).then(r=>{if(!r.ok)throw Error("champions");return r.json()});
-    state.champions=Object.values(data.data).map(c=>({id:c.id,name:c.name}));
-    list.innerHTML=state.champions.map(c=>`<option value="${escapeHtml(c.name)}"></option>`).join("");
-    const select=$("#my-champion");select.innerHTML=state.champions.map(c=>`<option value="${escapeHtml(c.name)}" ${c.name==="Nasus"?"selected":""}>${escapeHtml(c.name)}</option>`).join("");
-  }catch(e){$("#patch-label").textContent="Hors ligne";list.innerHTML=Object.keys(knownProfiles).map(n=>`<option value="${escapeHtml(n)}"></option>`).join("");}
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function profile(name){
-  if(knownProfiles[name])return knownProfiles[name];
-  const champ=state.champions.find(c=>c.name===name);
-  return {tags:[],damage:"unknown",mobility:"unknown",cc:"unknown",healing:"unknown",range:"unknown",unclassified:true};
-}
-function analyze(){
-  const names=$$("[data-enemy]").map(i=>canonicalName(i.value)).filter(Boolean);
-  if(!names.length){$("#analysis-results").hidden=false;$("#analysis-results").innerHTML='<div class="welcome-note"><span class="note-icon">!</span><div><strong>Ajoute au moins un champion adverse</strong><p>Le coach a besoin d’au moins une sélection pour commencer l’analyse.</p></div></div>';return;}
-  const profiles=names.map(name=>({name,...profile(name)}));
-  const count=key=>profiles.filter(p=>p[key]===true).length;
-  const physical=profiles.filter(p=>p.damage==="physical").length;
-  const magic=profiles.filter(p=>p.damage==="magic").length;
-  const mixed=profiles.filter(p=>p.damage==="mixed").length;
-  const ranged=profiles.filter(p=>p.range==="ranged").length;
-  const cc=profiles.filter(p=>p.cc==="high").length;
-  const healing=profiles.filter(p=>p.healing==="high").length;
-  const mobile=profiles.filter(p=>p.mobility==="high").length;
-  const unknown=profiles.filter(p=>p.unclassified).length;
-  const tips=[],items=[];
-  if(physical>=3){tips.push("La composition semble orientée dégâts physiques : privilégie une option d’armure après ton premier objet offensif.");items.push("Cœur gelé — à envisager si les menaces physiques et les attaques rapides dominent.");}
-  if(magic>=2||magic+mixed>=3){tips.push("Les dégâts magiques sont bien représentés : ne retarde pas trop ta résistance magique.");items.push("Visage spirituel — option défensive intéressante pour renforcer ta tenue en combat.");}
-  if(cc>=2){tips.push("Plusieurs champions disposent de contrôles importants : évite les entrées sans vision et réfléchis aux bottes adaptées.");items.push("Sandales de Mercure — à considérer si les contrôles et dégâts magiques te gênent réellement.");}
-  if(healing>=1){tips.push("Au moins une menace possède un profil de soin élevé : évalue le besoin d’anti-soin selon les soins réellement présents dans la partie.");items.push("Cotte épineuse / Plaque du mort — choix à confirmer selon les sources de soins et le rôle ciblé.");}
-  if(ranged>=3||mobile>=2){tips.push("La composition paraît difficile à atteindre : cherche les combats autour des contrôles alliés et garde ton ralentissement pour la cible prioritaire.");}
-  if(!tips.length)tips.push("La composition renseignée ne déclenche pas de contre-mesure évidente dans les profils actuellement reconnus. Garde un build équilibré et adapte-toi aux premiers achats adverses.");
-  const unclassifiedNote=unknown?'<p class="muted">Note : '+unknown+' champion(s) n’ont pas encore de profil de matchup détaillé. Leur présence est prise en compte, mais les recommandations sont partielles.</p>':"";
-  const html=`<div class="result-head"><div><span class="eyebrow">RÉSULTAT DE L'ANALYSE</span><h2>Lecture de la composition adverse</h2></div><span class="build-status">${names.length} / 5 CHAMPIONS</span></div>
-  <div class="result-card" style="margin-bottom:12px"><h3>Composition détectée</h3><p>${profiles.map(p=>escapeHtml(p.name)).join(" · ")}</p><p>Physique : ${physical} · Magique : ${magic} · Mixte : ${mixed} · Distance : ${ranged} · Contrôles élevés : ${cc}</p>${unclassifiedNote}</div>
-  <div class="result-grid"><div class="result-card"><h3>✦ Conseils prioritaires</h3><ul>${tips.map(t=>`<li>${escapeHtml(t)}</li>`).join("")}</ul></div><div class="result-card"><h3>◈ Objets à considérer</h3><ul>${(items.length?items:["Force de la trinité — base de puissance et de duel.","Bottes défensives — à choisir selon la menace dominante."]).map(t=>`<li>${escapeHtml(t)}</li>`).join("")}</ul></div><div class="result-card"><h3>⚔ Plan de jeu Nasus jungle</h3><ul><li>Privilégie un clear régulier et sécurise tes camps pour accumuler les charges de A.</li><li>Gank lorsque l'ennemi est avancé ou qu'un allié peut assurer le contrôle.</li><li>Prépare les objectifs avec de la vision : évite les combats frontaux sans information.</li></ul></div><div class="result-card"><h3>◎ Limites de cette première analyse</h3><p>Cette version utilise des profils de champions sélectionnés manuellement. Elle ne connaît pas encore les joueurs, les runes adverses, les scores, l'or ou les objets achetés. Les suggestions sont des pistes, pas une garantie de build optimal.</p></div></div>`;
-  $("#analysis-results").innerHTML=html;$("#analysis-results").hidden=false;$("#analysis-results").scrollIntoView({behavior:"smooth",block:"start"});
-}
-$$("[data-enemy]").forEach(input=>input.addEventListener("input",()=>{const n=$$("[data-enemy]").filter(i=>i.value.trim()).length;$("#enemy-counter").textContent=`${n} / 5`; }));
-$("#clear-enemies").addEventListener("click",()=>{$$("[data-enemy]").forEach(i=>i.value="");$("#enemy-counter").textContent="0 / 5";$("#analysis-results").hidden=true;});
-$("#analyze-btn").addEventListener("click",analyze);
-loadGameData();
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+const state={version:"—",champions:[],items:{}};
+const P={Nasus:["AD",0,0,1,2],Darius:["AD",0,1,2,2],LeeSin:["AD",3,1,1,3],Ahri:["AP",3,2,0,3],Jinx:["AD",1,0,0,3],Leona:["AP",1,3,0,1],Zed:["AD",3,0,0,3],Yasuo:["AD",3,2,1,3],Yone:["MIX",3,2,1,3],Syndra:["AP",0,2,0,3],Lux:["AP",0,3,0,2],Brand:["AP",0,1,0,3],Morgana:["AP",0,3,0,2],Vayne:["AD",2,1,0,3],Caitlyn:["AD",2,1,0,3],Ashe:["AD",0,3,0,3],Varus:["MIX",0,2,0,3],MissFortune:["AD",0,0,0,3],Nautilus:["AP",1,3,0,1],Thresh:["MIX",2,3,0,1],Blitzcrank:["AP",2,3,0,1],Maokai:["AP",0,3,1,1],Ornn:["MIX",0,3,0,1],Malphite:["AP",1,3,0,1],Garen:["AD",1,0,1,2],Sett:["AD",0,2,1,2],Aatrox:["AD",2,2,3,3],Warwick:["MIX",2,2,3,2],Vladimir:["AP",0,0,3,3],Soraka:["AP",0,1,3,1],Yuumi:["AP",0,0,3,1],Sylas:["AP",2,2,3,3],Katarina:["AP",3,0,0,3],Akali:["AP",3,1,0,3],Evelynn:["AP",2,1,0,3],Kindred:["AD",2,1,0,3],Graves:["AD",2,0,1,3],Karthus:["AP",0,0,0,3],Rammus:["AP",2,2,0,1],Amumu:["AP",1,3,0,1],Hecarim:["AD",3,2,1,2],Nocturne:["AD",3,1,0,3],JarvanIV:["AD",2,3,0,2],Vi:["AD",2,3,0,2],Poppy:["AD",1,3,0,1],MasterYi:["AD",2,0,2,3],Shaco:["AD",3,1,0,2],Kayn:["AD",3,1,2,3],Elise:["AP",2,2,0,3],Nidalee:["AP",3,0,1,3],Fiddlesticks:["AP",1,3,0,3],Lillia:["AP",3,2,0,3],Viego:["AD",3,1,2,3],Rengar:["AD",3,1,1,3],Khazix:["AD",3,0,0,3]};
+const aliases={"Maître Yi":"MasterYi","Jarvan IV":"JarvanIV","Miss Fortune":"MissFortune","Kha'Zix":"Khazix"};
+function norm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function getChamp(s){const n=norm(s);return state.champions.find(c=>norm(c.name)===n||norm(c.id)===n)||null;}
+function profile(c){const k=aliases[c.name]||c.id;return P[k]||null;}
+function champImg(c){return c?"https://ddragon.leagueoflegends.com/cdn/"+state.version+"/img/champion/"+c.id+".png":"";}
+function itemImg(id){return "https://ddragon.leagueoflegends.com/cdn/"+state.version+"/img/item/"+id+".png";}
+async function syncPatch(){try{const v=await fetch("https://ddragon.leagueoflegends.com/api/versions.json",{cache:"no-store"}).then(r=>r.json());state.version=v[0];const d=await Promise.all(["champion","item"].map(x=>fetch("https://ddragon.leagueoflegends.com/cdn/"+state.version+"/data/fr_FR/"+x+".json").then(r=>r.json())));state.champions=Object.values(d[0].data);state.items=d[1].data;$("#patch-label").textContent=state.version;$("#version-tag").textContent="PATCH "+state.version;$("#champion-list").innerHTML=state.champions.map(c=>'<option value="'+esc(c.name)+'"></option>').join("");}catch(e){$("#patch-label").textContent="Hors ligne";}}
+function nav(v){$$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+v));$$(".nav-link").forEach(x=>x.classList.toggle("active",x.dataset.view===v));window.scrollTo({top:0,behavior:"smooth"});}
+$$("[data-view]").forEach(b=>b.onclick=()=>nav(b.dataset.view));
+$$("[data-enemy]").forEach(x=>x.oninput=()=>$("#enemy-counter").textContent=$$("[data-enemy]").filter(y=>y.value.trim()).length+" / 5");
+$("#clear-enemies").onclick=()=>{$$("[data-enemy]").forEach(x=>x.value="");$("#enemy-counter").textContent="0 / 5";$("#analysis-results").hidden=true;};
+function analyze(){const roles=["TOP","JUNGLE","MID","ADC","SUPPORT"],e=$$("[data-enemy]").map((x,i)=>({role:roles[i],champ:getChamp(x.value)}));const bad=e.filter(x=>!x.champ);if(bad.length){$("#analysis-results").hidden=false;$("#analysis-results").innerHTML='<div class="result-section"><h3>Sélection incomplète</h3><p>Choisis les cinq champions dans les suggestions : '+bad.map(x=>x.role).join(", ")+'.</p></div>';return;}
+e.forEach(x=>x.p=profile(x.champ));const k=e.filter(x=>x.p),unknown=e.length-k.length,phys=k.filter(x=>x.p[0]==="AD").length,magic=k.filter(x=>x.p[0]==="AP").length,mixed=k.filter(x=>x.p[0]==="MIX").length,ranged=k.filter(x=>x.p[1]===0).length,cc=k.filter(x=>x.p[2]>=2).length,heal=k.some(x=>x.p[3]>=2),mobile=k.filter(x=>x.p[1]>=3).length;
+const danger=e.map(x=>({x,score:x.p?x.p[4]*2+x.p[2]+(x.role==="ADC"?2:0)+(x.p[1]===0?1:0):0})).sort((a,b)=>b.score-a.score),focus=danger[0].x,jg=e[1];
+let start="RED",reason="Départ rouge par défaut : organise ton clear pour terminer près de la lane alliée qui possède le plus de priorité. Sans draft alliée, ce choix reste à confirmer.";if(jg.p&&jg.p[1]>=3){start="BLUE";reason=jg.champ.name+" est un jungler mobile : évite le duel précoce, sécurise ton clear et termine du côté où tes lanes peuvent t'aider.";}if(ranged>=3){start=start==="RED"?"BLUE":"RED";reason="Trois adversaires ou plus ont de la portée. Fais ton clear pour finir près de la lane alliée capable d'engager ; évite les ganks frontaux sans contrôle.";}
+const build=[{id:3057,time:"Premier retour · 4:00–5:30",why:"Brillance : composant de la Trinité, utile dans tes échanges au A."},{id:cc>=2?3111:phys>=3?3047:3111,time:"Retour suivant · selon l'or",why:cc>=2?"Mercures si les contrôles adverses sont déterminants.":"Bottes défensives à ajuster aux dégâts réellement subis."},{id:3078,time:"Objet principal · environ 10–15 min",why:"Force de la trinité : accélère ton scaling et tes duels."},{id:magic>=2?3065:phys>=3?3110:3053,time:"Milieu de partie",why:magic>=2?"Visage spirituel contre les dégâts magiques et pour ta tenue.":phys>=3?"Cœur gelé contre les menaces physiques et attaques répétées.":"Sterak pour survivre lorsque tu dois rester au contact."}].filter(x=>state.items[x.id]);
+if(heal&&state.items[3075])build.push({id:3075,time:"Situationnel",why:"Cotte épineuse uniquement si les soins adverses pèsent réellement sur les combats."});
+const priorities=[];if(phys>=3)priorities.push("Dégâts physiques majoritaires : construis de l'armure après ta Trinité.");if(magic>=2||magic+mixed>=3)priorities.push("Menace magique notable : envisage Visage spirituel plus tôt si le mage prend l'avantage.");if(cc>=2)priorities.push("Contrôles nombreux : ne rentre pas avant les contrôles majeurs ; Mercures si leur impact est réel.");if(heal)priorities.push("Soins adverses importants : anti-soin seulement si ces soins font basculer les combats.");if(ranged>=3||mobile>=2)priorities.push("Composition difficile à atteindre : joue les flancs, garde ton ralentissement pour le carry accessible.");if(!priorities.length)priorities.push("Aucune menace dominante reconnue : conserve un build équilibré et adapte tes résistances aux premiers achats ennemis.");
+const target=focus.champ.name,targetRole=focus.role;const plan=[["EARLY · 0–10 MIN","Full clear et charges de A avant de forcer. Surveille "+jg.champ.name+" : ward l'entrée de ta jungle si ses lanes ont la priorité et évite l'invasion seul."],["MID · 10–20 MIN","Prépare les objectifs 45 à 60 secondes avant leur apparition. Cherche "+target+" si ses sorts défensifs sont utilisés et si ton allié peut suivre ; sinon convertis en camps ou objectif opposé."],["LATE · 20 MIN+","Attends les contrôles adverses avant d'avancer. Si "+target+" est accessible, ralentis-le et colle-le ; si la backline est protégée, protège ton carry et frappe la première cible à portée."]];
+const chips=e.map(x=>'<span class="enemy-chip"><img src="'+champImg(x.champ)+'">'+esc(x.champ.name)+' <small>'+x.role+'</small></span>').join("");
+const rows=build.map((x,i)=>'<div class="purchase-row"><span class="purchase-time">'+String(i+1).padStart(2,"0")+'</span><img src="'+itemImg(x.id)+'" alt=""><div><strong>'+esc(state.items[x.id].name)+'</strong><small>'+esc(x.time)+'</small></div><div class="purchase-why">'+esc(x.why)+'</div></div>').join("");
+$("#analysis-results").innerHTML='<div class="result-head"><div><span class="eyebrow">ANALYSE · PATCH '+esc(state.version)+'</span><h2>Plan de match · Nasus jungle</h2></div><span class="build-status">5 / 5</span></div><div class="result-section"><h3>Composition adverse</h3><div>'+chips+'</div>'+(unknown?'<p class="recommendation-warning">'+unknown+' profil(s) de champion ne sont pas encore détaillés : recommandations partielles.</p>':'')+'</div><div class="result-section"><h3>01 · Build et ordre d’achat</h3><p class="section-sub">Icônes des objets du patch détecté. Timings indicatifs : adapte chaque back à ton or et à l'état de la partie.</p><div class="purchase-list">'+rows+'</div><p class="recommendation-warning">Les achats proposés sont une base de matchup, pas un build statistique certifié. Achète les composants selon ton or disponible.</p></div><div class="result-section"><h3>02 · Départ jungle recommandé</h3><div class="start-choice"><div class="start-card '+(start==="RED"?"recommended":"")+'"><strong>🔴 RED</strong><span>'+(start==="RED"?"Départ conseillé":"Alternative")+'</span></div><div class="start-card '+(start==="BLUE"?"recommended":"")+'"><strong>🔵 BLUE</strong><span>'+(start==="BLUE"?"Départ conseillé":"Alternative")+'</span></div></div><p class="body-copy">'+esc(reason)+'</p></div><div class="result-section"><h3>03 · Cible prioritaire</h3><div class="priority-target"><img src="'+champImg(focus.champ)+'"><div><strong>'+esc(target.toUpperCase())+' · '+targetRole+'</strong><p>Menace estimée selon son rôle et son profil. Cherche à l'atteindre après les contrôles adverses, pas en entrant le premier.</p></div></div><p class="recommendation-warning">Réévalue cette cible selon le score, les sorts disponibles et la protection ennemie.</p></div><div class="result-section"><h3>04 · Conseils prioritaires</h3><ul class="priority-list">'+priorities.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div><div class="result-section"><h3>05 · Plan de jeu contre cette équipe</h3><div class="plan-grid">'+plan.map(x=>'<div class="plan-card"><b>'+x[0]+'</b><p>'+esc(x[1])+'</p></div>').join("")+'</div></div>';
+$("#analysis-results").hidden=false;$("#analysis-results").scrollIntoView({behavior:"smooth",block:"start"});}
+$("#analyze-btn").onclick=analyze;
+$("#riot-name").value=localStorage.getItem("lolcoach_riot_name")||"HeeerosFR";$("#riot-tag").value=localStorage.getItem("lolcoach_riot_tag")||"EUW";
+$("#riot-name").onchange=()=>localStorage.setItem("lolcoach_riot_name",$("#riot-name").value.trim());$("#riot-tag").onchange=()=>localStorage.setItem("lolcoach_riot_tag",$("#riot-tag").value.trim());
+$("#load-history").onclick=async()=>{const endpoint=localStorage.getItem("lolcoach_history_endpoint"),s=$("#history-status");if(!endpoint){s.innerHTML="<span>i</span><p>Ton Riot ID est prérempli. Pour synchroniser les matchs, le relais sécurisé Riot API doit encore être déployé avec une clé privée côté serveur. Elle ne doit jamais être mise dans cette page publique.</p>";return;}const u=new URL(endpoint);u.searchParams.set("gameName",$("#riot-name").value.trim());u.searchParams.set("tagLine",$("#riot-tag").value.trim());u.searchParams.set("region",$("#riot-region").value);u.searchParams.set("count","20");s.innerHTML="<span>…</span><p>Chargement des ranked…</p>";try{const d=await fetch(u).then(r=>{if(!r.ok)throw Error("API "+r.status);return r.json()});renderHistory(d);s.innerHTML="<span>✓</span><p>Historique synchronisé.</p>";}catch(e){s.innerHTML="<span>!</span><p>"+esc(e.message)+"</p>";}};
+function renderHistory(d){const ms=d.matches||[],w=ms.filter(x=>x.win).length;$("#history-summary").hidden=false;$("#history-summary").innerHTML=[["PARTIES",ms.length],["VICTOIRES",w],["DÉFAITES",ms.length-w],["WINRATE",ms.length?Math.round(w/ms.length*100)+"%":"—"]].map(x=>'<div class="stat-tile"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join("");$("#history-list").innerHTML=ms.map(m=>{const c=state.champions.find(x=>x.id===m.champion);return '<article class="match-card '+(m.win?"win":"")+'"><div class="match-result"></div><img class="match-champ" src="'+champImg(c)+'"><div class="match-main"><strong>'+esc(c?c.name:m.champion)+'</strong><small>'+(m.win?"VICTOIRE":"DÉFAITE")+' · '+esc(m.queue)+' · '+new Date(m.date).toLocaleDateString("fr-FR")+'</small><div class="match-items">'+(m.items||[]).filter(Boolean).map(id=>'<img src="'+itemImg(id)+'">').join("")+'</div></div><div class="match-meta"><span class="match-kda">'+m.kills+'/'+m.deaths+'/'+m.assists+'<small>KDA</small></span></div><div class="match-duration">'+Math.round(m.duration/60)+' min<small>'+(m.cs||0)+' CS</small></div></article>';}).join("")||'<div class="empty-state"><strong>Aucune ranked trouvée</strong></div>';}
+syncPatch();
