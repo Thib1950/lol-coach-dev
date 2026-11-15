@@ -1,32 +1,34 @@
 # LoL Coach — DEV
 
-Application web statique pour préparer des parties classées de League of Legends.
+Application web statique responsive pour préparer une ranked avec Nasus jungle et consulter l'historique Solo/Duo.
 
-## Première version
+## Fonctionnalités
+- Deux onglets : Historique des parties et Préparer une partie.
+- Synchronisation au chargement avec la dernière version publiée de Riot Data Dragon : champions, objets et icônes.
+- Analyse de draft sur cinq champions ennemis : ordre d'achat illustré, timings indicatifs de back, départ RED/BLUE, focus estimé et plan de jeu par phase.
+- Historique Solo/Duo avec Riot Account-V1 et Match-V5 via un Cloudflare Worker sécurisé.
 
-- Interface responsive ordinateur / tablette / mobile.
-- Navigation : Vue d'ensemble, Préparer une partie, Builds & runes, Matchups.
-- Profil initial : Nasus jungle.
-- Sélection des cinq champions adverses avec autocomplétion.
-- Première analyse heuristique : dégâts physiques/magiques, contrôles, soins, mobilité et portée.
-- Récupération de la version et de la liste des champions via Riot Data Dragon (données publiques).
+## Patch à jour
+À chaque ouverture, la page interroge l'API publique Data Dragon `versions.json`, puis télécharge les données françaises de la version la plus récente publiée. Data Dragon peut être mis à jour avec un léger décalage après le patch officiel ; les notes de patch Riot restent la référence pour les modifications d'équilibrage.
 
-## Déploiement GitHub Pages
+## Activer l'historique Riot (une seule configuration nécessaire)
+GitHub Pages est public et ne peut pas garder une clé secrète. Le Worker fourni dans `worker/` fait les appels Riot côté serveur.
 
-Dans le dépôt GitHub : **Settings → Pages → Build and deployment → Deploy from a branch**. Choisir la branche `main` et le dossier `/ (root)`, puis enregistrer.
+1. Créer un compte Cloudflare et installer Wrangler.
+2. Dans un terminal, depuis le dossier `worker`, déployer avec `npx wrangler deploy`.
+3. Ajouter la clé Riot Developer Portal comme secret : `npx wrangler secret put RIOT_API_KEY`.
+4. Dans les variables du Worker, définir `ALLOWED_ORIGIN` à `https://thib1950.github.io`.
+5. Dans la console du navigateur, une fois sur l'application, enregistrer l'adresse du Worker :
+   `localStorage.setItem("lolcoach_history_endpoint","https://NOM-DU-WORKER.workers.dev/api/history")`
+6. Recharger l'application. Le Riot ID **HeeerosFR#EUW** est prérempli ; clique sur « Charger mes parties ».
 
-Le site sera publié à l'adresse :
+L'historique récupère les parties classées Solo/Duo (queue 420), jusqu'à 20 matchs récents. La clé reste côté Cloudflare et n'est jamais envoyée au navigateur. Une clé Riot de développement doit être renouvelée conformément aux conditions du portail.
 
-`https://thib1950.github.io/lol-coach-dev/`
+## Limites du coach de draft
+Le moteur actuel est une première analyse tactique heuristique, avec profils manuels pour une sélection de champions. Il ne prétend pas calculer un build statistiquement optimal en temps réel. Les timings de back sont des repères, pas des prescriptions. Le choix RED/BLUE dépend aussi du côté de carte, des lanes alliées, du leash et de leur priorité ; ces informations ne sont pas encore saisies. Les conseils seront affinés avec davantage de profils et des données de matchup.
 
-La publication peut prendre quelques minutes après activation.
+## GitHub Pages
+Le dépôt utilise un workflow GitHub Actions dans `.github/workflows/deploy-pages.yml`. Dans **Settings → Pages**, choisir **GitHub Actions** comme source de publication. L'application sera accessible à :
+https://thib1950.github.io/lol-coach-dev/
 
-## Limites connues de la version 0.1
-
-Les recommandations sont une première base heuristique et ne prétendent pas être un build compétitif vérifié en temps réel. Les profils détaillés sont encore limités. Les prix, statistiques d'objets, runes et taux de victoire seront intégrés dans les prochaines étapes à partir de sources de données actualisées. Aucune clé API privée n'est stockée dans le navigateur.
-
-## Structure
-
-- `index.html` : structure de l'application
-- `style.css` : interface responsive
-- `app.js` : navigation, données champion et moteur de première analyse
+Ce projet n'est pas affilié à Riot Games. League of Legends et Riot Games sont des marques de Riot Games, Inc.
