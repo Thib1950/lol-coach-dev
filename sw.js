@@ -19,7 +19,7 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  const isAppDocument = request.mode === "navigate" || /\\.(?:css|js)$/.test(url.pathname);
+  const isAppDocument = request.mode === "navigate" || /\.(?:css|js)$/.test(url.pathname);
   if (!isAppDocument) return;
 
   event.respondWith((async () => {
