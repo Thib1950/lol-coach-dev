@@ -50,7 +50,7 @@ const frozen=findItem(["coeur gele","frozen heart"],[3110]);
 const visage=findItem(["visage spirituel","spirit visage"],[3065]);
 const thorn=findItem(["cotte epineuse","thornmail"],[3075]);
 const jaksho=findItem(["jaksho","jak sho"],[6665]);
-const deadmans=findItem(["plaque du mort","dead mans plate"],[ deadmans=0 ]);
+const deadmans=findItem(["plaque du mort","dead mans plate"],[3742]);
 const junglePet=findItem(["fauconificateur","gustwalker hatchling","compagnon de jungle"],[1102]);
 const build=[
  itemBuildEntry(junglePet,"Départ · niveau 1","Objet de départ jungle : conserve ton Smite et fais un clear complet."),
@@ -58,8 +58,8 @@ const build=[
  itemBuildEntry(trinity,"Objet principal · priorité n°1","Force de la trinité : cœur du build Nasus, excellent déclenchement avec A."),
  itemBuildEntry(boots,"Bottes · selon la composition","Mercure si contrôles lourds ; célérité si tu dois rejoindre les carries ; Ioniennes pour accélérer tes sorts."),
  itemBuildEntry(phys>=3?frozen:magic>=2?visage:(cc>=2?visage:frozen),"Défense · 3e/4e achat","Choix selon les dégâts dominants : Cœur gelé contre AD/attaques répétées ; Visage spirituel contre AP."),
- itemBuildEntry(heal?thorn:(phys>=3?visage:frozen),"Défense · achat suivant","Cotte épineuse seulement si les soins adverses sont réellement déterminants ; sinon complète la résistance manquante."),
- itemBuildEntry(jaksho,"Fin de build · situationnel","Jak'Sho pour renforcer la résistance globale dans les combats prolongés.")
+ itemBuildEntry(heal?thorn:(phys>=3?visage:magic>=2?frozen:visage),"Défense · achat suivant","Cotte épineuse si les soins adverses dominent ; sinon complète la résistance opposée à ton premier achat défensif."),
+ itemBuildEntry((ranged>=3||mobile>=2)&&deadmans?deadmans:jaksho,"Fin de build · situationnel",(ranged>=3||mobile>=2)&&deadmans?"Plaque du mort si la backline est difficile à atteindre ; la vitesse de déplacement aide Nasus à entrer au contact.":"Jak'Sho pour renforcer la résistance globale dans les combats prolongés.")
 ].filter(Boolean);
 if(!build.length){$("#analysis-results").hidden=false;$("#analysis-results").innerHTML='<div class="result-section"><h3>Build indisponible</h3><p>Les données d’objets du patch ne sont pas chargées. Attends la synchronisation ou recharge la page.</p></div>';return;}
 const priorities=[];if(phys>=3)priorities.push("Dégâts physiques majoritaires : construis de l'armure après ta Trinité.");if(magic>=2||magic+mixed>=3)priorities.push("Menace magique notable : envisage Visage spirituel plus tôt si le mage prend l'avantage.");if(cc>=2)priorities.push("Contrôles nombreux : ne rentre pas avant les contrôles majeurs ; Mercures si leur impact est réel.");if(heal)priorities.push("Soins adverses importants : anti-soin seulement si ces soins font basculer les combats.");if(ranged>=3||mobile>=2)priorities.push("Composition difficile à atteindre : joue les flancs, garde ton ralentissement pour le carry accessible.");if(!priorities.length)priorities.push("Aucune menace dominante reconnue : conserve un build équilibré et adapte tes résistances aux premiers achats ennemis.");
