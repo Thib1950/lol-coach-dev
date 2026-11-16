@@ -30,7 +30,7 @@ async function checkPatchUpdate(){if(patchCheckRunning)return;patchCheckRunning=
  if(!data[0].data||!data[1].data)throw new Error("Données du patch incomplètes");
  const nextChampions=Object.values(data[0].data),nextItems=data[1].data;
  if(!nextChampions.length||!Object.keys(nextItems).length)throw new Error("Données vides");
- state.version=latest;state.champions=nextChampions;state.items=nextItems;
+ state.version=latest;state.champions=nextChampions;state.items=Object.fromEntries(Object.entries(nextItems).map(([id,item])=>[id,{...item,id}]));
  renderPatchData();savePatchCache();setPatchLabel(latest+" · à jour",latest);
 }catch(error){console.warn("Vérification du patch impossible",error);setPatchLabel(state.version?(state.version+" · hors ligne"):"Indisponible · réessayer",state.version||null);}
 finally{patchCheckRunning=false;}}
