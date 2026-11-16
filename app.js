@@ -15,7 +15,7 @@ function setPatchLabel(label,version){$("#patch-label").textContent=label;$("#ve
 async function fetchJsonTimed(url,timeoutMs=10000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);try{const response=await fetch(url,{cache:"no-store",signal:controller.signal});if(!response.ok)throw new Error("HTTP "+response.status);return await response.json();}finally{clearTimeout(timer);}}
 function renderPatchData(){ $("#champion-list").innerHTML=state.champions.map(c=>'<option value="'+esc(c.name)+'"></option>').join(""); }
 function savePatchCache(){try{const data={version:state.version,champions:state.champions.map(c=>({id:c.id,name:c.name,tags:c.tags,stats:c.stats})),items:Object.values(state.items).map(i=>({id:i.id,name:i.name,description:i.description,plaintext:i.plaintext,tags:i.tags,maps:i.maps,stats:i.stats,gold:i.gold,from:i.from}))};localStorage.setItem(PATCH_CACHE_KEY,JSON.stringify(data));}catch(e){console.warn("Cache patch non enregistré",e);}}
-function loadPatchCache(){try{const raw=localStorage.getItem(PATCH_CACHE_KEY);if(!raw)return false;const data=JSON.parse(raw);if(!data.version||!Array.isArray(data.champions)||!Array.isArray(data.items))return false;state.version=data.version;state.champions=data.champions;state.items=Object.fromEntries(data.items.map(i=>[i.id,i]));renderPatchData();setPatchLabel(data.version+" · vérification",data.version);return true;}catch(e){return false;}}
+function loadPatchCache(){try{const raw=localStorage.getItem(PATCH_CACHE_KEY);if(!raw)return false;const data=JSON.parse(raw);if(!data.version||!Array.isArray(data.champions)||!Array.isArray(data.items)||!data.items.every(i=>i.id))return false;state.version=data.version;state.champions=data.champions;state.items=Object.fromEntries(data.items.map(i=>[i.id,i]));renderPatchData();setPatchLabel(data.version+" · vérification",data.version);return true;}catch(e){return false;}}
 let patchCheckRunning=false;
 async function checkPatchUpdate(){if(patchCheckRunning)return;patchCheckRunning=true;try{
  const versions=await fetchJsonTimed("https://ddragon.leagueoflegends.com/api/versions.json",8000);
@@ -37,8 +37,26 @@ finally{patchCheckRunning=false;}}
 function startPatchSync(){const hasCache=loadPatchCache();if(!hasCache)setPatchLabel("Recherche…",null);checkPatchUpdate();window.setInterval(checkPatchUpdate,30*60*1000);window.addEventListener("focus",()=>{if(document.visibilityState==="visible")checkPatchUpdate();});document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkPatchUpdate();});}
 function nav(v){$$(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+v));$$(".nav-link").forEach(x=>x.classList.toggle("active",x.dataset.view===v));window.scrollTo({top:0,behavior:"smooth"});}
 $$("[data-view]").forEach(b=>b.onclick=()=>nav(b.dataset.view));
-$$("[data-enemy]").forEach(x=>x.oninput=()=>$("#enemy-counter").textContent=$$("[data-enemy]").filter(y=>y.value.trim()).length+" / 5");
-$("#clear-enemies").onclick=()=>{$$("[data-enemy]").forEach(x=>x.value="");$("#enemy-counter").textContent="0 / 5";$("#analysis-results").hidden=true;};
+function setupChampionAutocomplete(){
+ const inputs=$("[data-enemy]");
+ inputs.forEach(input=>{
+  const slot=input.closest(".enemy-slot");if(!slot||slot.querySelector(".champion-suggestions"))return;
+  const list=document.createElement("div");list.className="champion-suggestions";list.hidden=true;slot.appendChild(list);
+  const close=()=>{list.hidden=true;list.innerHTML="";};
+  const show=()=>{const q=norm(input.value);if(!q||!state.champions.length){close();return;}
+   const matches=state.champions.filter(c=>norm(c.name).includes(q)||norm(c.id).includes(q)).slice(0,8);
+   list.innerHTML=matches.map(c=>'<button type="button" data-champ-id="'+esc(c.id)+'"><img src="'+champImg(c)+'" alt=""><span>'+esc(c.name)+'</span></button>').join("");
+   list.hidden=!matches.length;
+   list.querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>{const c=state.champions.find(x=>x.id===btn.dataset.champId);if(c)input.value=c.name;close();input.dispatchEvent(new Event("input",{bubbles:true}));}));
+  };
+  input.addEventListener("input",show);input.addEventListener("focus",show);
+  input.addEventListener("keydown",e=>{if(e.key==="Escape")close();if(e.key==="Enter"&&!list.hidden){const first=list.querySelector("button");if(first){e.preventDefault();first.click();}}});
+  document.addEventListener("click",e=>{if(!slot.contains(e.target))close();});
+ });
+}
+setupChampionAutocomplete();
+$("[data-enemy]").forEach(x=>x.oninput=()=>$("#enemy-counter").textContent=$("[data-enemy]").filter(y=>y.value.trim()).length+" / 5");
+$("#clear-enemies").onclick=()=>{$("[data-enemy]").forEach(x=>{x.value="";x.dispatchEvent(new Event("input",{bubbles:true}));});$("#enemy-counter").textContent="0 / 5";$("#analysis-results").hidden=true;};
 function analyze(){if(!state.champions.length||!Object.keys(state.items).length){$("#analysis-results").hidden=false;$("#analysis-results").innerHTML='<div class="result-section"><h3>Données du patch en chargement</h3><p>Le build sera calculé dès que les champions et objets seront disponibles. Vérifie ta connexion puis réessaie dans quelques secondes.</p><button class="primary-btn" onclick="window.retryPatchSync&&window.retryPatchSync()">Réessayer la synchronisation</button></div>';return;}const roles=["TOP","JUNGLE","MID","ADC","SUPPORT"],e=$$("[data-enemy]").map((x,i)=>({role:roles[i],champ:getChamp(x.value)}));const bad=e.filter(x=>!x.champ);if(bad.length){$("#analysis-results").hidden=false;$("#analysis-results").innerHTML='<div class="result-section"><h3>Sélection incomplète</h3><p>Choisis les cinq champions dans les suggestions : '+bad.map(x=>x.role).join(", ")+'.</p></div>';return;}
 e.forEach(x=>x.p=profile(x.champ));const k=e.filter(x=>x.p),unknown=e.filter(x=>!x.p||x.p.inferred).length,phys=k.filter(x=>x.p[0]==="AD").length,magic=k.filter(x=>x.p[0]==="AP").length,mixed=k.filter(x=>x.p[0]==="MIX").length,ranged=k.filter(x=>x.p[1]===0).length,cc=k.filter(x=>x.p[2]>=2).length,heal=k.some(x=>x.p[3]>=2),mobile=k.filter(x=>x.p[1]>=3).length;
 const danger=e.map(x=>({x,score:x.p?x.p[4]*2+x.p[2]+(x.role==="ADC"?2:0)+(x.p[1]===0?1:0):0})).sort((a,b)=>b.score-a.score),focus=danger[0].x,jg=e[1];
