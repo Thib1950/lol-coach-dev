@@ -1,5 +1,5 @@
-const CACHE_NAME = "lol-coach-runtime-v3";
-const APP_SHELL = ["./", "./index.html", "./style.css?v=20261116-1", "./app.js?v=20261116-3"];
+const CACHE_NAME = "lol-coach-runtime-v4";
+const APP_SHELL = ["./", "./index.html", "./style.css?v=20261116-2", "./app.js?v=20261116-4"];
 
 self.addEventListener("install", event => {
   self.skipWaiting();
